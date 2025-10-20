@@ -28,6 +28,9 @@ func main() {
 		OnStartup:        app.startup,
 		OnDomReady:       app.domReady,
 		OnBeforeClose:    app.beforeClose,
+		Bind: []interface{}{
+			app,
+		},
 	})
 
 	if err != nil {

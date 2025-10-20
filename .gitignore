@@ -21,7 +21,14 @@ go.work
 app.syso
 app.exe
 app
-build/bin/
+
+# Models
+models/
+
+# Compilation artifacts
+build/
+dist/
+output/
 
 # Frontend
 frontend/node_modules/
