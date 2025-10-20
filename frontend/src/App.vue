@@ -321,6 +321,11 @@ export default {
     // 显示错误信息
     const showErrorMessage = (title, message) => {
       console.log('显示错误:', title, message)
+      
+      // 1. 使用标准alert作为最可靠的备选方案
+      alert(`${title}\n${message}`)
+      
+      // 2. 同时更新Vue组件中的错误提示
       errorTitle.value = title
       errorMessage.value = message
       showError.value = true
