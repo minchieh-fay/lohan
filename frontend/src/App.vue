@@ -1,15 +1,63 @@
 <template>
   <div class="app">
-    <!-- 顶部工具栏 -->
-    <header class="header">
-      <h1>Lohan</h1>
-      <div class="status">
-        <span v-if="modelLoaded" class="status-indicator online">● AI已就绪</span>
-        <span v-else class="status-indicator offline">● AI未加载</span>
+    <!-- 错误提示模态框 -->
+    <div v-if="showError" class="error-modal">
+      <div class="error-modal-content">
+        <h3 class="error-title">{{ errorTitle }}</h3>
+        <p class="error-message">{{ errorMessage }}</p>
+        <button class="error-close-btn" @click="closeError">确定</button>
       </div>
-    </header>
+    </div>
+    
+    <!-- 模型下载页面 -->
+    <div v-if="showModelDownload" class="model-download-page">
+      <div class="download-container">
+        <h1>Lohan AI系统分析师</h1>
+        <p class="subtitle">请下载一个AI模型以继续使用</p>
+        
+        <div class="model-list">
+          <div 
+            v-for="model in availableModels" 
+            :key="model.name" 
+            class="model-card"
+            :class="{ 'downloading': downloadingModel === model.name }"
+          >
+            <h3>{{ model.name }}</h3>
+            <div class="model-info">
+              <span class="model-size">{{ model.size }}</span>
+              <p class="model-description">{{ model.description }}</p>
+            </div>
+            <button 
+              @click="downloadSelectedModel(model.name)"
+              :disabled="downloadingModel !== null"
+              class="btn-download"
+            >
+              {{ downloadingModel === model.name ? '下载中...' : '下载' }}
+            </button>
+          </div>
+        </div>
+        
+        <div v-if="downloadingModel" class="download-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: downloadProgress + '%' }"></div>
+          </div>
+          <span class="progress-text">{{ downloadProgress }}%</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 主应用页面 -->
+    <div v-else>
+      <!-- 顶部工具栏 -->
+      <header class="header">
+        <h1>Lohan</h1>
+        <div class="status">
+          <span v-if="modelLoaded" class="status-indicator online">● AI已就绪</span>
+          <span v-else class="status-indicator offline">● AI未加载</span>
+        </div>
+      </header>
 
-    <div class="main-container">
+      <div class="main-container">
       <!-- 左侧服务器列表 -->
       <aside class="server-list">
         <div class="server-list-header">
@@ -134,13 +182,14 @@
           <button @click="saveServer" class="btn-primary">保存</button>
         </div>
       </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted, nextTick, computed } from 'vue'
-import { GetServers, AddServer, UpdateServer, DeleteServer, IsModelLoaded, Ask, TestConnection, GetServerConnectionStatus, RefreshServerConnections } from '../wailsjs/go/main/App'
+import { GetServers, AddServer, UpdateServer, DeleteServer, IsModelLoaded, Ask, TestConnection, GetServerConnectionStatus, RefreshServerConnections, CheckModelExists, GetAvailableModels, DownloadModel } from '../wailsjs/go/main/App'
 
 export default {
   name: 'App',
@@ -150,8 +199,17 @@ export default {
     const messages = ref([])
     const inputMessage = ref('')
     const modelLoaded = ref(false)
+    const modelExists = ref(false)
+    const showModelDownload = ref(false)
+    const availableModels = ref([])
+    const downloadingModel = ref(null)
+    const downloadProgress = ref(0)
     const messagesContainer = ref(null)
     const serverConnectionStatus = ref({}) // 存储服务器连接状态
+    // 错误提示相关状态
+    const showError = ref(false)
+    const errorTitle = ref('')
+    const errorMessage = ref('')
 
     // 服务器对话框
     const showServerDialog = ref(false)
@@ -231,6 +289,102 @@ export default {
         modelLoaded.value = await IsModelLoaded()
       } catch (error) {
         console.error('Failed to check model status:', error)
+      }
+    }
+    
+    // 检查模型文件是否存在
+    const checkModelExists = async () => {
+      try {
+        modelExists.value = await CheckModelExists()
+        if (!modelExists.value) {
+          // 显示模型下载页面
+          showModelDownload.value = true
+          await loadAvailableModels()
+        }
+      } catch (error) {
+        console.error('Failed to check model existence:', error)
+        // 如果检查失败，也显示下载页面
+        showModelDownload.value = true
+        await loadAvailableModels()
+      }
+    }
+    
+    // 加载可用模型列表
+    const loadAvailableModels = async () => {
+      try {
+        availableModels.value = await GetAvailableModels()
+      } catch (error) {
+        console.error('Failed to load available models:', error)
+      }
+    }
+    
+    // 显示错误信息
+    const showErrorMessage = (title, message) => {
+      console.log('显示错误:', title, message)
+      errorTitle.value = title
+      errorMessage.value = message
+      showError.value = true
+      
+      // 8秒后自动隐藏
+      setTimeout(() => {
+        showError.value = false
+      }, 8000)
+    }
+    
+    // 关闭错误信息
+    const closeError = () => {
+      showError.value = false
+    }
+    
+    // 下载模型
+    const downloadSelectedModel = async (modelName) => {
+      try {
+        downloadingModel.value = modelName
+        downloadProgress.value = 0
+        
+        console.log('开始下载模型:', modelName)
+        // 这里需要在Go端修改DownloadModel方法，使其能够返回进度
+        // 暂时直接调用下载
+        await DownloadModel(modelName)
+        
+        // 下载完成后，重新检查模型是否存在
+        modelExists.value = await CheckModelExists()
+        if (modelExists.value) {
+          showModelDownload.value = false
+          // 尝试加载模型
+          await checkModelLoaded()
+        }
+      } catch (error) {
+        console.error('Failed to download model:', error)
+        console.error('Error type:', typeof error)
+        
+        // 确保能够正确获取错误信息
+        let errMsg = '下载失败！'
+        
+        // 尝试多种方式提取错误信息
+        if (error) {
+          if (typeof error === 'string') {
+            errMsg = '下载失败：' + error
+          } else if (error.message) {
+            errMsg = '下载失败：' + error.message
+          } else if (error.error) {
+            errMsg = '下载失败：' + error.error
+          } else {
+            try {
+              errMsg = '下载失败：' + JSON.stringify(error)
+            } catch (e) {
+              errMsg = '下载失败：无法解析错误信息'
+            }
+          }
+        }
+        
+        console.log('显示的错误信息:', errMsg)
+        // 使用Vue响应式数据显示错误
+        showErrorMessage('下载错误', errMsg)
+      } finally {
+        downloadingModel.value = null
+        downloadProgress.value = 0
+        console.log('下载操作完成')
       }
     }
 
@@ -422,7 +576,12 @@ export default {
     }
 
     onMounted(() => {
-      loadServers()
+      // 首先检查模型是否存在
+      checkModelExists()
+      // 只有在模型存在时才加载服务器列表
+      if (modelExists.value) {
+        loadServers()
+      }
       checkModelLoaded()
       
       // 定时刷新连接状态（每30秒）
@@ -448,6 +607,14 @@ export default {
       messages,
       inputMessage,
       modelLoaded,
+      modelExists,
+      showModelDownload,
+      availableModels,
+      downloadingModel,
+      downloadProgress,
+      showError,
+      errorTitle,
+      errorMessage,
       messagesContainer,
       showServerDialog,
       editingServer,
@@ -470,7 +637,9 @@ export default {
       showContextMenu,
       hideContextMenu,
       handleEditServer,
-      handleDeleteServer
+      handleDeleteServer,
+      downloadSelectedModel,
+      closeError
     }
   }
 }
@@ -488,6 +657,188 @@ export default {
   background: #1e1e1e;
   color: #e0e0e0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 错误提示模态框样式 */
+.error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.error-modal-content {
+  background: #ff4757;
+  color: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.error-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.error-message {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.error-close-btn {
+  background: white;
+  color: #ff4757;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.error-close-btn:hover {
+  background: #f0f0f0;
+}
+
+/* 模型下载页面样式 */
+.model-download-page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e1e1e;
+  padding: 20px;
+}
+
+.download-container {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+}
+
+.download-container h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #999;
+  margin-bottom: 40px;
+}
+
+.model-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.model-card {
+  background: #252525;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: left;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #3a3a3a;
+}
+
+.model-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.model-card.downloading {
+  opacity: 0.8;
+}
+
+.model-card h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.model-info {
+  margin-bottom: 16px;
+}
+
+.model-size {
+  display: inline-block;
+  background: #007acc;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.model-description {
+  font-size: 14px;
+  color: #ccc;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.btn-download {
+  width: 100%;
+  padding: 10px;
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-download:hover:not(:disabled) {
+  background: #005a9e;
+}
+
+.btn-download:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.download-progress {
+  margin-top: 20px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #3a3a3a;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #007acc;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  color: #999;
+  font-size: 14px;
 }
 
 .header {
