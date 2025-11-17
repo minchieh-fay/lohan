@@ -13,11 +13,14 @@ use application::usecases::llm::chat_with_ai::ChatWithAIUseCase;
 use domain::entities::resource::ConnectionConfig;
 use infrastructure::connectors::ssh_connector::SshConnector;
 use domain::services::resource_connector::ResourceConnector;
+use infrastructure::mcp::mcp_manager::MCPManager;
+use serde_json::Value;
 
 // Application state
 struct AppState {
     llm_service: Arc<dyn LLMService>,
     chat_use_case: Arc<ChatWithAIUseCase>,
+    mcp_manager: Arc<MCPManager>,
 }
 
 #[tauri::command]
@@ -73,16 +76,37 @@ async fn test_ssh_connection(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn list_mcp_tools() -> Result<Vec<serde_json::Value>, String> {
+    let manager = MCPManager::new();
+    let tools = manager.list_tools();
+    Ok(tools.into_iter().map(|t| serde_json::json!({
+        "name": t.name,
+        "description": t.description,
+        "parameters": t.parameters
+    })).collect())
+}
+
+#[tauri::command]
+async fn execute_mcp_tool(tool_name: String, arguments: Value) -> Result<Value, String> {
+    let manager = MCPManager::new();
+    manager.execute_tool(&tool_name, arguments)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
             // Initialize LLM service
             let llm_service: Arc<dyn LLMService> = Arc::new(OllamaClient::from_config());
             let chat_use_case = Arc::new(ChatWithAIUseCase::new(llm_service.clone()));
+            let mcp_manager = Arc::new(MCPManager::new());
             
             app.manage(AppState {
                 llm_service,
                 chat_use_case,
+                mcp_manager,
             });
             
             Ok(())
@@ -92,6 +116,8 @@ fn main() {
             check_llm_health,
             list_llm_models,
             test_ssh_connection,
+            list_mcp_tools,
+            execute_mcp_tool,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
