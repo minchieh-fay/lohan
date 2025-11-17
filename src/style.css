@@ -1,0 +1,426 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #222;
+  border-bottom: 1px solid #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #007acc;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.status-indicator {
+  margin-right: 8px;
+}
+
+.status-indicator.online {
+  color: #4CAF50;
+}
+
+.status-indicator.offline {
+  color: #f44336;
+}
+
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.resource-list {
+  width: 300px;
+  background-color: #282828;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.resource-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.resource-list-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #f0f0f0;
+}
+
+.btn-add {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-add:hover {
+  background-color: #005a9e;
+}
+
+.resources {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 5px 0;
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+.chat-header {
+  padding: 15px 20px;
+  background-color: #222;
+  border-bottom: 1px solid #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.selected-info {
+  color: #007acc;
+}
+
+.messages-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-item {
+  margin-bottom: 15px;
+  max-width: 80%;
+}
+
+.message-item.user {
+  align-self: flex-end;
+  background-color: #007acc;
+  border-radius: 10px 10px 0 10px;
+  padding: 10px 15px;
+}
+
+.message-item.ai {
+  align-self: flex-start;
+  background-color: #333;
+  border-radius: 10px 10px 10px 0;
+  padding: 10px 15px;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #bbb;
+  margin-bottom: 5px;
+}
+
+.message-role {
+  font-weight: bold;
+}
+
+.message-content {
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.chat-input {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #333;
+  background-color: #222;
+}
+
+.chat-input textarea {
+  flex: 1;
+  background-color: #333;
+  border: 1px solid #444;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 15px;
+  color: #f0f0f0;
+  resize: none;
+  margin-right: 10px;
+  min-height: 40px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.chat-input textarea:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.chat-input button {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background-color 0.2s;
+}
+
+.chat-input button:hover:not(:disabled) {
+  background-color: #005a9e;
+}
+
+.chat-input button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2d2d2d;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* 资源项样式 */
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #2d2d2d;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resource-item:hover {
+  background: #333;
+}
+
+.resource-item.selected {
+  background: #007acc;
+}
+
+.resource-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.resource-icon {
+  font-size: 1.2em;
+}
+
+.resource-info {
+  flex: 1;
+}
+
+.resource-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.resource-details {
+  font-size: 0.85em;
+  color: #999;
+}
+
+.resource-item.selected .resource-details {
+  color: #e0e0e0;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #282828;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 500px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #f0f0f0;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 22px;
+  text-align: center;
+  color: #007acc;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #bbb;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #444;
+  border-radius: 5px;
+  background-color: #333;
+  color: #f0f0f0;
+  font-size: 15px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+}
+
+.resource-config {
+  margin-top: 15px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  background: #555;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn-cancel:hover {
+  background: #666;
+}
+
+.btn-test {
+  padding: 10px 20px;
+  background: #ff9800;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn-test:hover:not(:disabled) {
+  background: #f57c00;
+}
+
+.btn-test:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background: #007acc;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn-primary:hover {
+  background: #005a9e;
+}
+
+.btn-secondary {
+  padding: 8px 15px;
+  background: #555;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-secondary:hover {
+  background: #666;
+}
+

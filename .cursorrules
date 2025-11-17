@@ -1,7 +1,7 @@
 # Lohan - AI系统分析师和运维助手项目规则
 
 ## 项目概述
-这是一个使用Wails框架开发的AI驱动的系统分析师和运维助手，用于自动化系统诊断、核心转储分析、恶意软件清理和数据修复。
+这是一个使用Tauri框架开发的AI驱动的系统分析师和运维助手，用于自动化系统诊断、核心转储分析、恶意软件清理和数据修复。
 
 ## 开发规则
 
@@ -17,20 +17,94 @@
 - 不要创建文档文件（如README、CHANGELOG等，除非用户要求）
 - 只创建用户明确要求创建的文件
 
-### 3. Wails开发规范
-- 使用Wails v2框架进行开发
-- 遵循Wails项目结构规范
-- 前端使用Vue.js或React（根据项目配置）
-- 后端使用Go语言
+### 3. Tauri开发规范
+- 使用Tauri框架进行开发
+- 遵循Tauri项目结构规范
+- 前端使用JavaScript/TypeScript + HTML/CSS
+- 后端使用Rust语言
 - 保持代码简洁和高效
 
-### 4. 代码质量
+### 4. Clean Architecture（清洁架构）规范
+
+#### 4.1 架构层次
+项目必须遵循Clean Architecture原则，分为以下层次：
+
+**外层（Infrastructure Layer）**:
+- `src-tauri/src/infrastructure/` - 基础设施层
+  - 数据库访问、文件系统、网络请求等外部依赖的实现
+  - SSH客户端、文件操作等具体实现
+
+**应用层（Application Layer）**:
+- `src-tauri/src/application/` - 应用服务层
+  - 用例（Use Cases）实现
+  - 业务逻辑编排
+  - 服务接口定义
+
+**领域层（Domain Layer）**:
+- `src-tauri/src/domain/` - 领域模型层
+  - 实体（Entities）
+  - 值对象（Value Objects）
+  - 领域服务接口（Repository Interfaces）
+  - 业务规则和领域逻辑
+
+**表示层（Presentation Layer）**:
+- `src/` - 前端UI层
+  - Vue/React组件
+  - UI逻辑
+  - 与Tauri后端的通信
+
+#### 4.2 依赖方向
+- **依赖方向**: 外层 → 内层
+- **禁止**: 内层依赖外层
+- **允许**: 外层实现内层定义的接口
+
+#### 4.3 目录结构示例
+```
+src-tauri/src/
+├── domain/              # 领域层（最内层）
+│   ├── entities/        # 实体
+│   ├── repositories/    # 仓储接口
+│   └── services/        # 领域服务接口
+├── application/         # 应用层
+│   ├── usecases/        # 用例实现
+│   └── services/        # 应用服务
+└── infrastructure/      # 基础设施层（最外层）
+    ├── repositories/    # 仓储实现
+    ├── ssh/            # SSH实现
+    └── llm/            # LLM集成实现
+```
+
+#### 4.4 实体和用例
+- **实体（Entities）**: 核心业务对象，不依赖任何框架
+- **用例（Use Cases）**: 特定业务场景的实现，依赖领域层接口
+- **仓储（Repositories）**: 定义在领域层，实现在基础设施层
+
+#### 4.5 依赖注入
+- 使用依赖注入管理依赖关系
+- 接口定义在领域层，实现在基础设施层
+- 应用层通过接口使用服务，不直接依赖具体实现
+
+### 5. Rust代码规范
+- 遵循Rust官方代码风格（rustfmt）
+- 使用`cargo clippy`检查代码质量
+- 合理使用所有权、借用和生命周期
+- 错误处理使用Result类型
+- 使用适当的错误类型（如anyhow、thiserror）
+
+### 6. 前端代码规范
+- 使用现代JavaScript/TypeScript
+- 遵循ESLint规则
+- 组件化开发
+- 保持UI简洁和响应式
+
+### 7. 代码质量
 - 编写清晰、可读的代码
-- 遵循Go语言最佳实践
+- 遵循Rust和JavaScript最佳实践
 - 保持函数和变量的命名一致性
 - 添加必要的注释（但不要过度注释）
+- 每个模块职责单一，高内聚低耦合
 
-### 5. 响应语言
+### 8. 响应语言
 - 所有回复必须使用简体中文
 - 代码注释使用英文
 - 变量和函数名使用英文
@@ -40,3 +114,5 @@
 - 使用绝对路径进行文件操作
 - 保持项目的简洁性和专注性
 - 不要添加不必要的依赖或复杂性
+- 严格遵循Clean Architecture的层次划分
+- 新功能开发时，先定义领域层接口，再实现基础设施层

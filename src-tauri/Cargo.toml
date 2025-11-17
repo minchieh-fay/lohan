@@ -1,0 +1,35 @@
+[package]
+name = "lohan"
+version = "1.0.0"
+description = "AI-powered system analyst and operations assistant"
+authors = ["Lohan Team"]
+license = "MIT"
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = ["shell-open", "fs-create-dir", "fs-read-dir", "fs-read-file", "fs-remove-dir", "fs-remove-file", "fs-write-file", "path-all"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+async-trait = { workspace = true }
+
+# SSH support
+ssh2 = "0.9"
+
+# HTTP client for API calls
+reqwest = { version = "0.11", features = ["json"] }
+
+# File system operations
+walkdir = "2"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
